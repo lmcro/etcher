@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Resin.io
+ * Copyright 2016 resin.io
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,23 +19,24 @@
 
 // Prevent white flash when running application
 html {
-  background-color: $body-bg;
+  background-color: $palette-theme-dark-background;
 }
 
-// Fix slighly checkbox vertical alignment issue
+body {
+  background-color: $palette-theme-dark-background;
+}
+
+// Fix slight checkbox vertical alignment issue
 .checkbox input[type="checkbox"] {
   position: initial;
   margin-right: 2px;
 }
 
-// Disable modal opacity
-.modal-backdrop.in {
-  opacity: 0;
+[uib-tooltip] {
+  cursor: default;
 }
 
-.alert {
-  @extend .text-center;
-
-  border: none;
-  border-radius: 2px;
+.tooltip {
+  word-wrap: break-word;
 }
+

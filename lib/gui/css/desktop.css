@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Resin.io
+ * Copyright 2016 resin.io
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,14 +43,8 @@ html {
 }
 
 body {
-  overflow: auto;
+  overflow: hidden;
   -webkit-overflow-scrolling: touch;
-}
-
-/* Prevent blue outline */
-input:focus,
-button:focus {
-  outline: none !important;
 }
 
 /* Titles don't have margins on desktop apps */

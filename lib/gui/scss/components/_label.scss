@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Resin.io
+ * Copyright 2016 resin.io
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,16 +15,21 @@
  */
 
 .label {
-  font-size: 11px;
+  font-size: 9px;
   font-weight: normal;
+}
+
+.label-big {
+  font-size: 11px;
   padding: 8px 25px;
 }
 
-.label-default {
-  background-color: #3e4147;
-  color: darken($gray-light, 30%);
+.label-inset {
+  background-color: darken($palette-theme-dark-background, 10%);
+  color: darken($palette-theme-dark-foreground, 43%);
+}
 
-  > b {
-    color: darken(white, 5%);
-  }
+.label-danger {
+  background-color: $palette-theme-danger-background;
+  color: $palette-theme-danger-foreground;
 }

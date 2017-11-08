@@ -1,311 +1,383 @@
-'use strict';
+/*
+ * Copyright 2017 resin.io
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
-const m = require('mochainon');
-const angular = require('angular');
-const drivelist = require('drivelist');
-require('angular-mocks');
+'use strict'
 
-describe('Browser: DriveScanner', function() {
+const m = require('mochainon')
+const os = require('os')
+const drivelist = require('drivelist')
+const driveScanner = require('../../../lib/gui/modules/drive-scanner')
 
-  beforeEach(angular.mock.module(
-    require('../../../lib/gui/modules/drive-scanner')
-  ));
+describe('Browser: driveScanner', function () {
+  describe('detected devices should be an array', function () {
+    it('should emit an empty array', function (done) {
+      const spy = m.sinon.spy()
 
-  describe('DriveScannerService', function() {
+      driveScanner.once('devices', function (drives) {
+        m.chai.expect(drives).to.be.an.instanceof(Array)
+        m.chai.expect(spy).to.not.have.been.called
+        driveScanner.removeListener('error', spy)
+        driveScanner.stop()
+        done()
+      })
 
-    let $interval;
-    let $rootScope;
-    let $timeout;
-    let $q;
-    let DriveScannerService;
+      driveScanner.on('error', spy)
+      driveScanner.start()
+    })
+  })
 
-    beforeEach(angular.mock.inject(function(_$interval_, _$rootScope_, _$timeout_, _$q_, _DriveScannerService_) {
-      $interval = _$interval_;
-      $rootScope = _$rootScope_;
-      $timeout = _$timeout_;
-      $q = _$q_;
-      DriveScannerService = _DriveScannerService_;
-    }));
-
-    it('should have no drives by default', function() {
-      m.chai.expect(DriveScannerService.drives).to.deep.equal([]);
-    });
-
-    describe('.scan()', function() {
-
-      describe('given no available drives', function() {
-
-        beforeEach(function() {
-          this.drivesListStub = m.sinon.stub(drivelist, 'list');
-          this.drivesListStub.yields(null, []);
-        });
-
-        afterEach(function() {
-          this.drivesListStub.restore();
-        });
-
-        it('should eventually equal an empty array', function(done) {
-          DriveScannerService.scan().then(function(drives) {
-            m.chai.expect(drives).to.deep.equal([]);
-            done();
-          });
-
-          $rootScope.$apply();
-        });
-
-      });
-
-      describe('given available system drives', function() {
-
-        beforeEach(function() {
-          this.drives = [
+  describe('given only system available drives', function () {
+    beforeEach(function () {
+      this.drivelistStub = m.sinon.stub(drivelist, 'list')
+      this.drivelistStub.yields(null, [
+        {
+          device: '/dev/sda',
+          description: 'WDC WD10JPVX-75J',
+          size: '931.5G',
+          mountpoints: [
             {
-              device: '/dev/sda',
-              description: 'WDC WD10JPVX-75J',
-              size: '931.5G',
-              mountpoint: '/',
-              system: true
+              path: '/'
             }
-          ];
+          ],
+          system: true
+        }
+      ])
+    })
 
-          this.drivesListStub = m.sinon.stub(drivelist, 'list');
-          this.drivesListStub.yields(null, this.drives);
-        });
+    afterEach(function () {
+      this.drivelistStub.restore()
+    })
 
-        afterEach(function() {
-          this.drivesListStub.restore();
-        });
+    it('should emit an empty array', function (done) {
+      const spy = m.sinon.spy()
 
-        it('should eventually equal an empty array', function(done) {
-          DriveScannerService.scan().then(function(drives) {
-            m.chai.expect(drives).to.deep.equal([]);
-            done();
-          });
+      driveScanner.once('devices', function (drives) {
+        m.chai.expect(drives).to.deep.equal([])
+        m.chai.expect(spy).to.not.have.been.called
+        driveScanner.removeListener('error', spy)
+        driveScanner.stop()
+        done()
+      })
 
-          $rootScope.$apply();
-        });
+      driveScanner.on('error', spy)
+      driveScanner.start()
+    })
+  })
 
-      });
+  describe('given linux', function () {
+    beforeEach(function () {
+      this.osPlatformStub = m.sinon.stub(os, 'platform')
+      this.osPlatformStub.returns('linux')
+    })
 
-      describe('given available system and removable drives', function() {
+    afterEach(function () {
+      this.osPlatformStub.restore()
+    })
 
-        beforeEach(function() {
-          this.drives = [
-            {
-              device: '/dev/sda',
-              description: 'WDC WD10JPVX-75J',
-              size: '931.5G',
-              mountpoint: '/',
-              system: true
-            },
+    describe('given available drives', function () {
+      beforeEach(function () {
+        this.drivelistStub = m.sinon.stub(drivelist, 'list')
+        this.drivelistStub.yields(null, [
+          {
+            device: '/dev/sda',
+            displayName: '/dev/sda',
+            description: 'WDC WD10JPVX-75J',
+            size: '931.5G',
+            mountpoints: [
+              {
+                path: '/'
+              }
+            ],
+            system: true
+          },
+          {
+            device: '/dev/sdb',
+            displayName: '/dev/sdb',
+            description: 'Foo',
+            size: '14G',
+            mountpoints: [
+              {
+                path: '/mnt/foo'
+              }
+            ],
+            system: false
+          },
+          {
+            device: '/dev/sdc',
+            displayName: '/dev/sdc',
+            description: 'Bar',
+            size: '14G',
+            mountpoints: [
+              {
+                path: '/mnt/bar'
+              }
+            ],
+            system: false
+          }
+        ])
+      })
+
+      afterEach(function () {
+        this.drivelistStub.restore()
+      })
+
+      it('should emit the non removable drives', function (done) {
+        const spy = m.sinon.spy()
+
+        driveScanner.once('devices', function (drives) {
+          m.chai.expect(drives).to.deep.equal([
             {
               device: '/dev/sdb',
+              displayName: '/dev/sdb',
               description: 'Foo',
               size: '14G',
-              mountpoint: '/mnt/foo',
+              mountpoints: [
+                {
+                  path: '/mnt/foo'
+                }
+              ],
+              adapter: 'standard',
               system: false
             },
             {
               device: '/dev/sdc',
+              displayName: '/dev/sdc',
               description: 'Bar',
               size: '14G',
-              mountpoint: '/mnt/bar',
+              mountpoints: [
+                {
+                  path: '/mnt/bar'
+                }
+              ],
+              adapter: 'standard',
               system: false
             }
-          ];
+          ])
 
-          this.drivesListStub = m.sinon.stub(drivelist, 'list');
-          this.drivesListStub.yields(null, this.drives);
-        });
+          m.chai.expect(spy).to.not.have.been.called
+          driveScanner.removeListener('error', spy)
+          driveScanner.stop()
+          done()
+        })
 
-        afterEach(function() {
-          this.drivesListStub.restore();
-        });
+        driveScanner.on('error', spy)
+        driveScanner.start()
+      })
+    })
+  })
 
-        it('should eventually become the removable drives', function(done) {
-          DriveScannerService.scan().then(function(drives) {
-            m.chai.expect(drives).to.deep.equal([
+  describe('given windows', function () {
+    beforeEach(function () {
+      this.osPlatformStub = m.sinon.stub(os, 'platform')
+      this.osPlatformStub.returns('win32')
+    })
+
+    afterEach(function () {
+      this.osPlatformStub.restore()
+    })
+
+    describe('given available drives', function () {
+      beforeEach(function () {
+        this.drivelistStub = m.sinon.stub(drivelist, 'list')
+        this.drivelistStub.yields(null, [
+          {
+            device: '\\\\.\\PHYSICALDRIVE1',
+            displayName: 'C:',
+            description: 'WDC WD10JPVX-75J',
+            size: '931.5G',
+            mountpoints: [
               {
-                device: '/dev/sdb',
-                description: 'Foo',
-                size: '14G',
-                mountpoint: '/mnt/foo',
-                system: false
-              },
-              {
-                device: '/dev/sdc',
-                description: 'Bar',
-                size: '14G',
-                mountpoint: '/mnt/bar',
-                system: false
+                path: 'C:'
               }
-            ]);
-            done();
-          });
+            ],
+            system: true
+          },
+          {
+            device: '\\\\.\\PHYSICALDRIVE2',
+            displayName: '\\\\.\\PHYSICALDRIVE2',
+            description: 'Foo',
+            size: '14G',
+            mountpoints: [],
+            system: false
+          },
+          {
+            device: '\\\\.\\PHYSICALDRIVE3',
+            displayName: 'F:',
+            description: 'Bar',
+            size: '14G',
+            mountpoints: [
+              {
+                path: 'F:'
+              }
+            ],
+            system: false
+          }
+        ])
+      })
 
-          $rootScope.$apply();
-        });
+      afterEach(function () {
+        this.drivelistStub.restore()
+      })
 
-      });
+      it('should emit the non removable drives', function (done) {
+        const spy = m.sinon.spy()
 
-      describe('given an error when listing the drives', function() {
-
-        beforeEach(function() {
-          this.drivesListStub = m.sinon.stub(drivelist, 'list');
-          this.drivesListStub.yields(new Error('scan error'));
-        });
-
-        afterEach(function() {
-          this.drivesListStub.restore();
-        });
-
-        it('should be rejected with the error', function(done) {
-          DriveScannerService.scan().catch(function(error) {
-            m.chai.expect(error).to.be.an.instanceof(Error);
-            m.chai.expect(error.message).to.equal('scan error');
-            done();
-          });
-
-          $rootScope.$apply();
-        });
-
-      });
-
-    });
-
-    describe('given no drives', function() {
-
-      describe('.hasAvailableDrives()', function() {
-
-        it('should return false', function() {
-          const hasDrives = DriveScannerService.hasAvailableDrives();
-          m.chai.expect(hasDrives).to.be.false;
-        });
-
-      });
-
-      describe('.setDrives()', function() {
-
-        it('should be able to set drives', function() {
-          const drives = [
+        driveScanner.once('devices', function (drives) {
+          m.chai.expect(drives).to.deep.equal([
             {
-              device: '/dev/sdb',
+              device: '\\\\.\\PHYSICALDRIVE2',
+              displayName: '\\\\.\\PHYSICALDRIVE2',
               description: 'Foo',
               size: '14G',
-              mountpoint: '/mnt/foo',
+              mountpoints: [],
+              adapter: 'standard',
+              system: false
+            },
+            {
+              device: '\\\\.\\PHYSICALDRIVE3',
+              displayName: 'F:',
+              description: 'Bar',
+              size: '14G',
+              mountpoints: [
+                {
+                  path: 'F:'
+                }
+              ],
+              adapter: 'standard',
               system: false
             }
-          ];
+          ])
 
-          DriveScannerService.setDrives(drives);
-          m.chai.expect(DriveScannerService.drives).to.deep.equal(drives);
-        });
+          m.chai.expect(spy).to.not.have.been.called
+          driveScanner.removeListener('error', spy)
+          driveScanner.stop()
+          done()
+        })
 
-      });
+        driveScanner.on('error', spy)
+        driveScanner.start()
+      })
+    })
 
-    });
-
-    describe('given drives', function() {
-
-      beforeEach(function() {
-        this.drives = [
+    describe('given a drive with a single drive letters', function () {
+      beforeEach(function () {
+        this.drivelistStub = m.sinon.stub(drivelist, 'list')
+        this.drivelistStub.yields(null, [
           {
-            device: '/dev/sdb',
-            description: 'Foo',
-            size: '14G',
-            mountpoint: '/mnt/foo',
-            system: false
-          },
-          {
-            device: '/dev/sdc',
+            device: '\\\\.\\PHYSICALDRIVE3',
+            displayName: 'F:',
             description: 'Bar',
             size: '14G',
-            mountpoint: '/mnt/bar',
+            mountpoints: [
+              {
+                path: 'F:'
+              }
+            ],
             system: false
           }
-        ];
+        ])
+      })
 
-        DriveScannerService.drives = this.drives;
-      });
+      afterEach(function () {
+        this.drivelistStub.restore()
+      })
 
-      describe('.hasAvailableDrives()', function() {
+      it('should use the drive letter as the name', function (done) {
+        const spy = m.sinon.spy()
 
-        it('should return true', function() {
-          const hasDrives = DriveScannerService.hasAvailableDrives();
-          m.chai.expect(hasDrives).to.be.true;
-        });
+        driveScanner.once('devices', function (drives) {
+          m.chai.expect(drives).to.have.length(1)
+          m.chai.expect(drives[0].displayName).to.equal('F:')
+          m.chai.expect(spy).to.not.have.been.called
+          driveScanner.removeListener('error', spy)
+          driveScanner.stop()
+          done()
+        })
 
-      });
+        driveScanner.on('error', spy)
+        driveScanner.start()
+      })
+    })
 
-      describe('.setDrives()', function() {
-
-        it('should keep the same drives if equal', function() {
-          DriveScannerService.setDrives(this.drives);
-          m.chai.expect(DriveScannerService.drives).to.deep.equal(this.drives);
-        });
-
-        it('should consider drives with different $$hashKey the same', function() {
-          this.drives[0].$$haskey = 1234;
-          DriveScannerService.setDrives(this.drives);
-          m.chai.expect(DriveScannerService.drives).to.deep.equal(this.drives);
-        });
-
-      });
-
-    });
-
-    describe('given available drives', function() {
-
-      beforeEach(function() {
-        this.drives = [
+    describe('given a drive with multiple drive letters', function () {
+      beforeEach(function () {
+        this.drivesListStub = m.sinon.stub(drivelist, 'list')
+        this.drivesListStub.yields(null, [
           {
-            device: '/dev/sdb',
-            description: 'Foo',
-            size: '14G',
-            mountpoint: '/mnt/foo',
-            system: false
-          },
-          {
-            device: '/dev/sdc',
+            device: '\\\\.\\PHYSICALDRIVE3',
+            displayName: 'F:, G:, H:',
             description: 'Bar',
             size: '14G',
-            mountpoint: '/mnt/bar',
+            mountpoints: [
+              {
+                path: 'F:'
+              },
+              {
+                path: 'G:'
+              },
+              {
+                path: 'H:'
+              }
+            ],
             system: false
           }
-        ];
+        ])
+      })
 
-        this.scanStub = m.sinon.stub(DriveScannerService, 'scan');
-        this.scanStub.returns($q.resolve(this.drives));
-      });
+      afterEach(function () {
+        this.drivesListStub.restore()
+      })
 
-      afterEach(function() {
-        this.scanStub.restore();
-      });
+      it('should join all the mountpoints in `name`', function (done) {
+        const spy = m.sinon.spy()
 
-      it('should set the drives to the scanned ones', function() {
-        DriveScannerService.start(200);
-        $timeout.flush();
-        $interval.flush(400);
-        m.chai.expect(DriveScannerService.drives).to.deep.equal(this.drives);
-        DriveScannerService.stop();
-      });
+        driveScanner.once('devices', function (drives) {
+          m.chai.expect(drives).to.have.length(1)
+          m.chai.expect(drives[0].displayName).to.equal('F:, G:, H:')
+          m.chai.expect(spy).to.not.have.been.called
+          driveScanner.removeListener('error', spy)
+          driveScanner.stop()
+          done()
+        })
 
-      describe('.start()', function() {
+        driveScanner.on('error', spy)
+        driveScanner.start()
+      })
+    })
+  })
 
-        it('should emit a `scan` event with the drives', function() {
-          const emitter = DriveScannerService.start(2000);
-          const scanSpy = m.sinon.spy();
-          emitter.on('scan', scanSpy);
-          $timeout.flush();
-          $interval.flush(1000);
-          m.chai.expect(scanSpy).to.have.been.calledOnce;
-          m.chai.expect(scanSpy).to.have.been.calledWith(this.drives);
-          DriveScannerService.stop();
-        });
+  describe('given an error when listing the drives', function () {
+    beforeEach(function () {
+      this.drivesListStub = m.sinon.stub(drivelist, 'list')
+      this.drivesListStub.yields(new Error('scan error'))
+    })
 
-      });
+    afterEach(function () {
+      this.drivesListStub.restore()
+    })
 
-    });
+    it('should emit the error', function (done) {
+      driveScanner.once('error', function (error) {
+        m.chai.expect(error).to.be.an.instanceof(Error)
+        m.chai.expect(error.message).to.equal('scan error')
+        driveScanner.stop()
+        done()
+      })
 
-  });
-});
+      driveScanner.start()
+    })
+  })
+})

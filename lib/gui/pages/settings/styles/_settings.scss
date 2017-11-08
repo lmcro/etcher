@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Resin.io
+ * Copyright 2016 resin.io
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,14 @@
  * limitations under the License.
  */
 
-.page-settings .checkbox input[type="checkbox"]:not(:checked) + * {
-  color: $gray-light;
+.page-settings .checkbox input[type="checkbox"] + * {
+  color: $palette-theme-dark-foreground;
 }
 
+.page-settings .checkbox input[type="checkbox"]:not(:checked) + * {
+  color: $palette-theme-dark-soft-foreground;
+}
+
+.page-settings .title {
+  color: $palette-theme-dark-foreground;
+}

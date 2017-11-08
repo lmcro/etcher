@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Resin.io
+ * Copyright 2016 resin.io
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,13 +33,17 @@ $spacing-tiny: 5px;
   margin-bottom: $spacing-small;
 }
 
-.space-top-medium {
-  margin-top: $spacing-medium;
+.space-top-large {
+  margin-top: $spacing-large;
 }
 
 .space-vertical-large {
   margin-top: $spacing-large;
   margin-bottom: $spacing-large;
+}
+
+.space-bottom-medium {
+  margin-bottom: $spacing-medium;
 }
 
 .space-bottom-large {
